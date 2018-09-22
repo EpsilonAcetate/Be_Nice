@@ -12,14 +12,30 @@ var text;
 var arrowText;
 var inventory = [];
 
+var inventoryPress = false;
+var iKey;
+var hasDrawn = false;
+var inventoryGraphics;
+var inventoryTitle;
+var pressed = false;
+current_music = 0;
+
+var musiclist = ["Forest", "Inn", "Tavern", "Library", "Overworld"];
+
 function preload() {
 
     //  tiles are 16x16 each
     game.load.image('tiles', 'assets/1x/tiles.png');
     game.load.image('inn', 'assets/inn.png');
-    game.load.spritesheet('dude', 'assets/front-walk.png', 32, 32);
+    game.load.spritesheet('dude', 'assets/1x/guy.png', 32, 32);
     game.load.bitmapFont('pixelfont', 'assets/font.png', 'assets/font.fnt');
     game.load.bitmapFont('arrowfont', 'assets/fontalt.png', 'assets/font.fnt');
+    game.load.bitmapFont('invfont', 'assets/blackfont.png', 'assets/blackfont.fnt');
+    game.load.audio('Forest', ['assets/Forest.mp3']);
+    game.load.audio('Inn', ['assets/Inn.mp3']);
+    game.load.audio('Tavern', ['assets/Tavern.mp3']);
+    game.load.audio('Library', ['assets/Library.mp3']);
+    game.load.audio('Overworld', ['assets/Overworld.mp3']);
 }
 
 function loadFile(filePath) {
@@ -44,15 +60,26 @@ function stringToArray(s) {
   return toreturn
 }
 
+var music;
+
 var cursors;
 var outdoor_maps_S;
+var current_map_num;
+var musics = {0:"Overworld",1:"Overworld",2:"Overworld",3:"Overworld",4:"Overworld",5:"Overworld",6:"Inn",7:"Inn",8:"Tavern",9:"Library",10:"Library",11:"Overworld",12:"Overworld",13:"Overworld",14:"Forest",15:"Forest", 16:"Overworld",17:"Overworld"};
+
 
 function create() {
+
+    music = game.add.audio('Overworld');
+    current_playing_music = 'Overworld';
+    music.play();
+
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     cursors = game.input.keyboard.createCursorKeys();
     enterKey = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
     interactKey = game.input.keyboard.addKey(Phaser.Keyboard.F);
+    iKey = game.input.keyboard.addKey(Phaser.Keyboard.I);
 
 
     TLS = loadFile("assets/top-left.csv");
@@ -86,6 +113,12 @@ function create() {
     h3A = stringToArray(h3S);
     forestS = loadFile("assets/forest.csv");
     forestA = stringToArray(forestS);
+    forestPS = loadFile("assets/forest-post.csv");
+    forestPA = stringToArray(forestPS);
+    BRPS = loadFile("assets/bottom-right-post.csv");
+    BRPA = stringToArray(BRPS);
+    BMPS = loadFile("assets/bottom-mid-post.csv");
+    BMPA = stringToArray(BRPS);
 
     game.cache.addTilemap('dynamicMap', null, TLS, Phaser.Tilemap.CSV);
     map = game.add.tilemap('dynamicMap', 32, 32);
@@ -95,13 +128,19 @@ function create() {
     player = game.add.sprite(32*2, 32*2, 'dude');
     game.physics.arcade.enable(player);
 
-    player.animations.add('left', [0, 1, 2, 3,4,5,6,7], 10, true);
-  //  player.animations.add('right', [5, 6, 7, 8], 10, true);
+    player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+    
+    music = game.add.audio('Overworld');
+    
 
     current_map = TLA;
+    current_map_num = 0;
 
-    outdoor_maps_S = {0:TLS, 3:BLS, 1:TMS, 4: BMS, 2:TRS, 5:BRS, 6:innDS, 7:innUS, 8:tavernS, 9:libUS, 10:libDS, 11:h1S, 12:h2S, 13:h3S, 14:forestS};
-    outdoor_maps_A = {0:TLA, 3:BLA, 1:TMA, 4: BMA, 2:TRA, 5:BRA, 6:innDA, 7:innUA, 8:tavernA, 9:libUA, 10:libDA, 11:h1A, 12:h2A, 13:h3A, 14:forestA};
+    outdoor_maps_S = {0:TLS, 3:BLS, 1:TMS, 4: BMS, 2:TRS, 5:BRS, 6:innDS, 7:innUS, 8:tavernS, 9:libUS, 10:libDS, 11:h1S, 12:h2S, 13:h3S, 14:forestS, 15:forestPS, 16:BRPS, 17:BMPS};
+    outdoor_maps_A = {0:TLA, 3:BLA, 1:TMA, 4: BMA, 2:TRA, 5:BRA, 6:innDA, 7:innUA, 8:tavernA, 9:libUA, 10:libDA, 11:h1A, 12:h2A, 13:h3A, 14:forestA, 15:forestPA, 16:BRPA, 17:BMPA};
 }
 
 function movePlayer(x, y) {  
@@ -147,13 +186,13 @@ function destroyTextBox(){
 
 function canMove(y, x) {
     try{
-        return true;
+        return walkover.includes(parseInt(current_map[y][x]));
 //      console.log(y);
 //      console.log(x);
 //      console.log(current_map);
         console.log(current_map[y][x]);
        // console.log((1 <= current_map[y][x] && current_map[y][x] <= 20) || (111 <= current_map[y][x] && current_map[y][x] <= 131));
-        return current_map[y][x] < 21 || current_map[y][x] >= 75;
+//        return current_map[y][x] < 21 || current_map[y][x] >= 75;
         //return (1 <= current_map[y][x] && current_map[y][x] <= 20) || (111 <= current_map[y][x] && current_map[y][x] <= 131)
     } catch(err){
         return false
@@ -171,6 +210,7 @@ function replaceMap_outdoors(x, y, doornum) {
     console.log(outdoor_maps_S[outdoor_doors[doornum]]);
     updating = true;
     player.destroy();
+    current_map = outdoor_doors[doornum];
     
     game.cache.addTilemap('dynamicMap', null, outdoor_maps_S[outdoor_doors[doornum]], Phaser.Tilemap.CSV);
     new_map = game.add.tilemap('dynamicMap', 32, 32);
@@ -194,6 +234,11 @@ function replaceMap_outdoors(x, y, doornum) {
     }
     console.log( "(" + newx + "," + newy + ")");
     player = game.add.sprite(newx*32, newy*32, 'dude');
+    player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+
     game.physics.arcade.enable(player);
     playerx = newx;
     playery = newy;
@@ -202,9 +247,11 @@ function replaceMap_outdoors(x, y, doornum) {
     updating = false;
 }
 
+var walkover = [1,2,3,4,5,6,7,8,9,80,81,82,83,84,85,86,87,88,89,90,91,92,93,9495,96,97,98,99,78,76,74,72,70,68,101,105,106,107,108,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,189,192,193,197,198]
+
 door_dests = {
     83:[0, 9, 8], 98:[6, 9, 7], 82:[7,5,9], 84:[6,5,10], 86:[8,8,5], 87:[4,6,7], 88:[1,5,5], 89:[10,6,4], 90:[10,1,3], 
-    91:[9, 5,4],92:[5,3,7],93:[11,5,4],95:[12,5,1],94:[3,5,7],96:[2,6,6],97:[13,5,1], 80:[14,7,11],99:[0,6,0]
+    91:[9, 5,4],92:[5,3,7],93:[11,5,4],95:[12,5,1],94:[3,5,7],96:[2,6,6],97:[13,5,1], 80:[14,7,11],99:[0,6,1]
 }
 function door_movement(doornum) {
     if (updating) {return;}
@@ -218,12 +265,18 @@ function door_movement(doornum) {
     new_map = game.add.tilemap('dynamicMap', 32, 32);
     new_map.addTilesetImage('tiles', 'tiles', 32, 32);
     new_floor_layer = new_map.createLayer(0);
+    current_map_num = door_dests[doornum][0];
 
     newx = door_dests[doornum][2]
     newy = door_dests[doornum][1]
     console.log( "(" + newx + "," + newy + ")");
     player = game.add.sprite(newx*32, newy*32, 'dude');
     game.physics.arcade.enable(player);
+    player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+
     playerx = newx;
     playery = newy;
     current_map = outdoor_maps_A[door_dests[doornum][0]];
@@ -232,31 +285,98 @@ function door_movement(doornum) {
     updating = false;
 }
 var npcs = {
-    68:["old man", ["man: blah blah", "how are you today?", "sup", "Asdf"], false, "test object", ["oh my god, you\n have my test \n object!", "thank you so much"]],
-    70:["old lady", ["old lady: hello there,\n young one", "my husband is dying qq", "gib herbs"], false, "herbs", ["oh my god", "tysm"]],
-    72:["inkeeper", ["inkeeper: hi dude","i have a crush on the\nbartender","i lost my ring tho"], false, "ring", ["i love u"]],
-    74:["barkeeper",["barkeeper: sup", "i have a crush on the\n inkeeper"], false, "ring", ["i love u"]],
-    76:["farmer", ["man: hi i'm planting a tree", "wanna lend me a hand?"], false, "nada", []],
+    68:["old man", ["Hey kid, what brings you\n to my humble abode?", "I haven’t been doing so well\n these past couple of days.",
+     "These aching bones are making\n it too difficult to move \naround much. ", "If only I had some \nSalix Babylonica herb..."], 
+     false, "herbs", 
+     ["Is that Salix \nBabylonica herb I see?", "Thanks kid, you’re a \ntrue lifesaver.", "I feel much better already.",
+      "I don’t have anything on \nhand to offer, but perhaps I can\n treat you to some dinner later."]],
+    70:["old lady", ["Hello sweetie.","You remind me of my \ngrandson left many years\n ago."], false, "nada", ["oh my god", "tysm"]],
+    72:["inkeeper", ["I was wondering if you \ncould do me a favor...","I feel like the \nbartender hates me, and \n I'm not sure why..."], false, "ring", ["i love u"]],
+    74:["barkeeper",["Oh? You think there’s something\n wrong with ME?","Ya sure you’re talkin’\n to the right man?", "Anyone can see that it’s the \nINNKEEPER that has something \nwrong with them." ,"My pub ‘ere can get a little\n wild but everyone knows it’s one \nof the more docile taverns in the \nrealm, honest!","And then here comes the Innkeeper, waltzing in for the first time anyone in town knows of, and what does he do? Demand that I keep MY pub quieted down, claiming that the noise was'bothering the guests' or some such.", "Didn’t even have the decency to say hello, the rotten… *gulp, gulp, gulp…*"]
+, false, "ring", ["i love u"]],
+    76:["farmer", ["man: hi i'm planting a tree", "wanna lend me a hand?"], false, "nada", [], true],
+    78:["girl", ["Excuse me? Mister? Miss?","You look brave and kind, \nso would you please help me?","I lost a special doll in the \nforest while collecting \nmushrooms."," It was my mother’s \nfavorite!","I don’t know what she’d \ndo without it.","I would ask my dad but he’s \nalways stumbling around that \nbuilding with the \nbitter drinks..."," I can’t blame him \nfor being tired,\n he works so hard.", "Could you please find \nthe doll for me?"], false, "doll", ["Thank you so much!!"]],
+    101:["librarian", ["looking for something?"], false, "nada", []],
+    197:["book", ["A horticulture book \ncatches your attention.", "As you read through it,\n you note that the local\n forest is filled with plants\n with healing attributes."], false, "nada", []]
 }
 var objects = {
-    170:["test object", true], 171:["test object second", true]
+    188:["herbs", "you found some \nmedicinal looking herbs.", true],
+    189:["doll", "you found a doll!", true],
+    187:["smell", "the plants here \nsmell interesting."],
+    193:["dirt", "the earth here is a little soft.", false],
+    192:["ring", "a small mineshaft opened up!\n you find a ring among \nthe dirt.", true],
 }
-npclocations = [68, 70, 72, 74, 76]
+
+npclocations = [68, 70, 72, 74, 76, 78, 101, 197]
 var dialogqueue = []
 var awaitingdialogue = false;
+var objectlocations = [187,188,189,171,192,193];
+var donetalking = false;
+
+function hasLooped() {
+}
 
 function update() {
 //     console.log( "(" + playerx + "," + playery + ")");
-    var thistile = current_map[playery][playerx]
+    console.log(current_map_num);
+    console.log(current_playing_music);
+    if (musics[current_map_num] != current_playing_music) {
+        game.sound.stopAll();
+        current_music = (current_music + 1) % 5;
+        game.add.audio(musiclist[current_music]);
+        current_playing_music = musics[current_map_num]
+       // themusic.onLoop.add(hasLooped, this);
+        music.play();
+    }
+    try {
+        var thistile = current_map[playery][playerx]
+    } catch(error) {
+        var thistile = 1;
+    }
     console.log(thistile);
-    if (170 <= thistile && thistile <= 200) {
+    if (interactKey.isDown && objectlocations.includes(parseInt(thistile))) {
         try{
             destroyTextBox();
         } catch(error){}
         dialogqueue = []
         current_map[playery][playerx] = 1;
-        dialogqueue.push(objects[thistile][0]);
-        inventory.push(objects[thistile][0]);
+        dialogqueue.push(objects[thistile][1]);
+        if (objects[thistile][2]) {
+            dialogqueue.push(objects[thistile][0] + " has been added \nto inventory.")
+            inventory.push(objects[thistile][0]);
+        }
+        if (objects[thistile][0] == "doll") {
+            outdoor_maps_S[14] = outdoor_maps_S[15];
+            outdoor_maps_A[14] = outdoor_maps_A[15];
+            game.cache.addTilemap('dynamicMap', null, outdoor_maps_S[15], Phaser.Tilemap.CSV);
+            new_map = game.add.tilemap('dynamicMap', 32, 32);
+            new_map.addTilesetImage('tiles', 'tiles', 32, 32);
+            new_floor_layer = new_map.createLayer(0);
+            current_map = outdoor_maps_A[15];
+
+            player = game.add.sprite(playerx*32, playery*32, 'dude');
+            game.physics.arcade.enable(player);
+            player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+
+        } if (objects[thistile][0] == "dirt" && inventory.includes("shovel")) {
+            outdoor_maps_S[4] = outdoor_maps_S[17];
+            outdoor_maps_A[4] = outdoor_maps_A[17];
+            game.cache.addTilemap('dynamicMap', null, outdoor_maps_S[4], Phaser.Tilemap.CSV);
+            new_map = game.add.tilemap('dynamicMap', 32, 32);
+            new_map.addTilesetImage('tiles', 'tiles', 32, 32);
+            new_floor_layer = new_map.createLayer(0);
+            current_map = outdoor_maps_A[4];
+            player = game.add.sprite(playerx*32, playery*32, 'dude');
+            game.physics.arcade.enable(player);
+            player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+
+        }
         createText(dialogqueue.shift())
         awaitingdialogue = true;
         console.log(inventory);
@@ -274,13 +394,13 @@ function update() {
             console.log("c");
         } else if (cursors.right.isDown && canMove(playery, playerx+1)) {
             movePlayer(1, 0);
-   //         player.animations.play('right');
+            player.animations.play('right');
         } else if (cursors.down.isDown && canMove(playery+1, playerx)) {
             movePlayer(0, 1);
-   //         player.animations.play('right');
+            player.animations.play('forward');
         } else if (cursors.up.isDown && canMove(playery-1, playerx)) {
             movePlayer(0, -1);
-   //         player.animations.play('right');
+            player.animations.play('back');
         }
     }
     if (111 <= thistile && thistile <= 140) {//MAP EDGE
@@ -292,6 +412,7 @@ function update() {
             try{
                 destroyTextBox();
             } catch(error){}
+            donetalking = false;
             dialogqueue = []
             if (!inventory.includes(npcs[thistile][3])) {
                 for (var which=0; which<npcs[thistile][1].length; which++){
@@ -309,6 +430,25 @@ function update() {
    //         console.log(hasPressed);
             i = 0;
         }
+        try {
+            if (npcs[thistile][5] && donetalking) {
+                outdoor_maps_S[5] = outdoor_maps_S[16];
+                outdoor_maps_A[5] = outdoor_maps_A[16];
+                game.cache.addTilemap('dynamicMap', null, outdoor_maps_S[5], Phaser.Tilemap.CSV);
+                new_map = game.add.tilemap('dynamicMap', 32, 32);
+                new_map.addTilesetImage('tiles', 'tiles', 32, 32);
+                new_floor_layer = new_map.createLayer(0);
+                current_map = outdoor_maps_A[5];
+                player = game.add.sprite(playerx*32, playery*32, 'dude');
+                game.physics.arcade.enable(player);
+                player.animations.add('forward', [0,1,2, 3,4,5,6,7], 10, true);
+    player.animations.add('right', [8,9,10,11,12,13,14,15], 10, true);
+    player.animations.add('left', [16,17,18,19,20,21,22,23], 10, true);
+    player.animations.add('back', [24,25,26,27,28,29,30,31], 10, true);
+
+                inventory.push("shovel");
+            }
+        } catch (error){}
        // createText('interaction thing!');
        // hasPressed = true;
     }
@@ -325,11 +465,50 @@ function update() {
             i++;
         } else {
             awaitingdialogue = false;
+            donetalking = true;
         }
-
     } else if(enterKey.isUp){
         hasPressed = false;
     }
+
+
+    if(iKey.isDown && !pressed){
+    inventoryPress = !inventoryPress;
+    pressed = true;
+    }
+    else if(iKey.isUp){
+    pressed = false;
+
+    }
+
+if(inventoryPress && !hasDrawn){
+    graph = game.add.group();
+items = game.add.group();
+
+inventoryTitle = game.add.bitmapText(game.world.width/8,game.world.height/6,'invfont','Inventory',36);
+items.add(inventoryTitle);
+    inventoryGraphics = game.add.graphics(0, 0);
+    inventoryGraphics.lineStyle(4, 0xFFFFFF , 1);
+    inventoryGraphics.beginFill(0xFFFFFF , 1);
+ inventoryGraphics.drawRect(game.world.width/8, game.world.height/6 , game.world.width - game.world.width/4, game.world.height - game.world.height/3); 
+ //100, 100, 600, 400.
+    inventoryGraphics.endFill();
+graph.add(inventoryGraphics);
+    for(var m = 0; m < inventory.length; m++ ){
+
+    var item = game.add.bitmapText(game.world.width/4,game.world.height/3+(m*(game.world.height/10)),'invfont',inventory[m],24);
+    items.add(item);
+
+    }
+    hasDrawn = true;
+}
+
+else if(!inventoryPress && hasDrawn){
+    graph.destroy();
+    items.destroy();
+    hasDrawn = false;
+}
+
     
 }
 
