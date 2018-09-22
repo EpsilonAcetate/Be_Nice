@@ -1,0 +1,22 @@
+canvas {
+    margin: 0 auto;
+    image-rendering: pixelated
+}
+@media screen and (min-width: 260px) and (min-height: 230px) {
+    canvas {
+        width: 256px !important;
+        height: 256px !important
+    }
+}
+@media screen and (min-width: 520px) and (min-height: 450px) {
+    canvas {
+        width: 520px !important;
+        height: 520px !important
+    }
+}
+@media screen and (min-width: 770px) and (min-height: 680px) {
+    canvas {
+        width: 770px !important;
+        height: 770px !important
+    }
+}
