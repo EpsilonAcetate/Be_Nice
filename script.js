@@ -33,7 +33,7 @@ function preload() {
     game.load.bitmapFont('invfont', 'assets/blackfont.png', 'assets/blackfont.fnt');
     game.load.audio('Forest', ['assets/Forest.mp3']);
     game.load.audio('Inn', ['assets/Inn.mp3']);
-    game.load.audio('Tavern', ['assets/Tavern.mp3']);
+    game.load.audio('Tavern', ['assets/Tavern-Loop.mp3']);
     game.load.audio('Library', ['assets/Library.mp3']);
     game.load.audio('Overworld', ['assets/Overworld.mp3']);
 }
@@ -247,7 +247,7 @@ function replaceMap_outdoors(x, y, doornum) {
     updating = false;
 }
 
-var walkover = [1,2,3,4,5,6,7,8,9,80,81,82,83,84,85,86,87,88,89,90,91,92,93,9495,96,97,98,99,78,76,74,72,70,68,101,105,106,107,108,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,189,192,193,197,198]
+var walkover = [1,2,3,4,5,6,7,8,9,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,78,76,74,72,70,68,101,105,106,107,108,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,187,188,189,192,193,197,198]
 
 door_dests = {
     83:[0, 9, 8], 98:[6, 9, 7], 82:[7,5,9], 84:[6,5,10], 86:[8,8,5], 87:[4,6,7], 88:[1,5,5], 89:[10,6,4], 90:[10,1,3], 
@@ -292,7 +292,7 @@ var npcs = {
       "I don’t have anything on \nhand to offer, but perhaps I can\n treat you to some dinner later."]],
     70:["old lady", ["Hello sweetie.","You remind me of my \ngrandson left many years\n ago."], false, "nada", ["oh my god", "tysm"]],
     72:["inkeeper", ["I was wondering if you \ncould do me a favor...","I feel like the \nbartender hates me, and \n I'm not sure why..."], false, "ring", ["i love u"]],
-    74:["barkeeper",["Oh? You think there’s something\n wrong with ME?","Ya sure you’re talkin’\n to the right man?", "Anyone can see that it’s the \nINNKEEPER that has something \nwrong with them." ,"My pub ‘ere can get a little\n wild but everyone knows it’s one \nof the more docile taverns in the \nrealm, honest!","And then here comes the Innkeeper, waltzing in for the first time anyone in town knows of, and what does he do? Demand that I keep MY pub quieted down, claiming that the noise was'bothering the guests' or some such.", "Didn’t even have the decency to say hello, the rotten… *gulp, gulp, gulp…*"]
+    74:["barkeeper",["Oh? You think there’s something\n wrong with ME?","Ya sure you’re talkin’\n to the right man?", "Anyone can see that it’s the \nINNKEEPER that has something \nwrong with them." ,"My pub ‘ere can get a little\n wild but everyone knows it’s\n one of the more docile taverns \nin the realm, honest!","And then here comes \nthe Innkeeper, waltzing \nin for the first time anyone in \ntown knows of...","and what does he \ndo? Demand that I keep MY\n pub quieted down...", "claiming that the noise \nwas'bothering the guests' or \nsome such.", "Didn’t even have the \ndecency to say hello, \nthe rotten… *gulp, gulp, gulp…*"]
 , false, "ring", ["i love u"]],
     76:["farmer", ["man: hi i'm planting a tree", "wanna lend me a hand?"], false, "nada", [], true],
     78:["girl", ["Excuse me? Mister? Miss?","You look brave and kind, \nso would you please help me?","I lost a special doll in the \nforest while collecting \nmushrooms."," It was my mother’s \nfavorite!","I don’t know what she’d \ndo without it.","I would ask my dad but he’s \nalways stumbling around that \nbuilding with the \nbitter drinks..."," I can’t blame him \nfor being tired,\n he works so hard.", "Could you please find \nthe doll for me?"], false, "doll", ["Thank you so much!!"]],
@@ -322,10 +322,9 @@ function update() {
     console.log(current_playing_music);
     if (musics[current_map_num] != current_playing_music) {
         game.sound.stopAll();
-        current_music = (current_music + 1) % 5;
-        game.add.audio(musiclist[current_music]);
+        music = game.add.audio(musics[current_map_num]);
         current_playing_music = musics[current_map_num]
-       // themusic.onLoop.add(hasLooped, this);
+        music.onLoop.add(hasLooped, this);
         music.play();
     }
     try {
